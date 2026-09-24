@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- This meta tag makes it perfectly scaled for mobile screens and prevents zooming -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Beat with Shoe Game</title>
+    <style>
+        /* Reset margins and prevent scrolling */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #e0e5ec; /* Light background */
+            font-family: Arial, sans-serif;
+            touch-action: none; /* Prevents default browser swipe/scroll actions */
+        }
+
+        #gameArea {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Scoreboard styling */
+        #scoreBoard {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            z-index: 10;
+        }
+
+        /* Styling for the attached photo */
+        #targetPerson {
+            position: absolute;
+            width: 120px; /* Adjust size for mobile */
+            transition: left 0.4s ease-out, top 0.4s ease-out, transform 0.2s; /* Smooth dodging movement */
+            user-select: none;
+            -webkit-user-drag: none; /* Prevents dragging the image */
+            z-index: 5;
+        }
+
+        /* The animation when the person is hit */
+        .flinch {
+            transform: scale(0.7) rotate(15deg) !important;
+            filter: grayscale(100%) sepia(100%) hue-rotate(-50deg) saturate(5); /* Flashes red */
+        }
+
+        /* The Shoe */
+        .shoe {
+            position: absolute;
+            font-size: 100px;
+            pointer-events: none; /* Ensures the shoe doesn't block your taps */
+            transform: translate(-50%, -100%);
+            opacity: 0;
+            z-index: 20;
+        }
+
+        /* The hitting animation for the shoe */
+        .smash {
+            animation: shoeSmash 0.3s ease-out;
+        }
+
+        @keyframes shoeSmash {
+            0% { opacity: 1; transform: translate(-50%, -200%) rotate(-30deg) scale(1.5); }
+            40% { opacity: 1; transform: translate(-50%, -30%) rotate(0deg) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -30%) rotate(0deg) scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="gameArea">
+        <div id="scoreBoard">Score: <span id="score">0</span></div>
+        
+        <!-- The person/target image -->
+        <img src="17317.png" id="targetPerson" alt="Target" />
+        
+        <!-- The shoe emoji that will appear on tap -->
+        <div id="shoe" class="shoe">👞</div>
+    </div>
+
+    <script>
+        const target = document.getElementById('targetPerson');
+        const shoe = document.getElementById('shoe');
+        const scoreElement = document.getElementById('score');
+        let score = 0;
+
+        // Function to move the person randomly (saving himself)
+        function dodge() {
+            // Get screen dimensions minus the image size so it stays on screen
+            const maxX = window.innerWidth - 120; 
+            const maxY = window.innerHeight - 150;
+
+            const randomX = Math.floor(Math.random() * maxX);
+            const randomY = Math.floor(Math.random() * maxY);
+
+            target.style.left = randomX + 'px';
+            target.style.top = randomY + 'px';
+        }
+
+        // Make the person dodge every 1.2 seconds automatically
+        let dodgeInterval = setInterval(() => {
+            if (!target.classList.contains('flinch')) {
+                dodge();
+            }
+        }, 1200);
+
+        // Initial placement
+        dodge();
+
+        // Listen for screen taps
+        document.getElementById('gameArea').addEventListener('pointerdown', function(e) {
+            // Position the shoe exactly where the user tapped
+            shoe.style.left = e.clientX + 'px';
+            shoe.style.top = e.clientY + 'px';
+
+            // Restart the shoe smash animation
+            shoe.classList.remove('smash');
+            void shoe.offsetWidth; // Trigger reflow to restart animation
+            shoe.classList.add('smash');
+        });
+
+        // Listen for taps directly on the person image
+        target.addEventListener('pointerdown', function(e) {
+            // Stop the event from triggering the gameArea listener twice
+            e.stopPropagation(); 
+
+            // Position shoe and animate
+            shoe.style.left = e.clientX + 'px';
+            shoe.style.top = e.clientY + 'px';
+            shoe.classList.remove('smash');
+            void shoe.offsetWidth;
+            shoe.classList.add('smash');
+
+            // Add hit score
+            score++;
+            scoreElement.innerText = score;
+
+            // Apply flinch animation
+            target.classList.add('flinch');
+
+            // After a short delay, remove flinch and make him dodge away quickly
+            setTimeout(() => {
+                target.classList.remove('flinch');
+                dodge(); // Instantly move to a new spot to "save himself"
+            }, 300);
+        });
+    </script>
+</body>
+</html>
+
+
