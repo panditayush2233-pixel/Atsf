@@ -1,158 +1,1345 @@
-<!DOCTYPE html>
+   <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <!-- This meta tag makes it perfectly scaled for mobile screens and prevents zooming -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Beat with Shoe Game</title>
-    <style>
-        /* Reset margins and prevent scrolling */
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #e0e5ec; /* Light background */
-            font-family: Arial, sans-serif;
-            touch-action: none; /* Prevents default browser swipe/scroll actions */
-        }
+<meta charset="UTF-8">
 
-        #gameArea {
-            position: relative;
-            width: 100%;
-            height: 100%;
-        }
+<meta name="viewport"
+      content="width=device-width,
+               initial-scale=1,
+               maximum-scale=1,
+               user-scalable=no">
 
-        /* Scoreboard styling */
-        #scoreBoard {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            font-size: 24px;
-            font-weight: bold;
-            color: #333;
-            z-index: 10;
-        }
+<title>SHOE ATTACK 👞</title>
 
-        /* Styling for the attached photo */
-        #targetPerson {
-            position: absolute;
-            width: 120px; /* Adjust size for mobile */
-            transition: left 0.4s ease-out, top 0.4s ease-out, transform 0.2s; /* Smooth dodging movement */
-            user-select: none;
-            -webkit-user-drag: none; /* Prevents dragging the image */
-            z-index: 5;
-        }
+<style>
 
-        /* The animation when the person is hit */
-        .flinch {
-            transform: scale(0.7) rotate(15deg) !important;
-            filter: grayscale(100%) sepia(100%) hue-rotate(-50deg) saturate(5); /* Flashes red */
-        }
+/* =========================================================
+   BASIC RESET
+========================================================= */
 
-        /* The Shoe */
-        .shoe {
-            position: absolute;
-            font-size: 100px;
-            pointer-events: none; /* Ensures the shoe doesn't block your taps */
-            transform: translate(-50%, -100%);
-            opacity: 0;
-            z-index: 20;
-        }
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    -webkit-tap-highlight-color:transparent;
+}
 
-        /* The hitting animation for the shoe */
-        .smash {
-            animation: shoeSmash 0.3s ease-out;
-        }
+html,
+body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    font-family:Arial,Helvetica,sans-serif;
+}
 
-        @keyframes shoeSmash {
-            0% { opacity: 1; transform: translate(-50%, -200%) rotate(-30deg) scale(1.5); }
-            40% { opacity: 1; transform: translate(-50%, -30%) rotate(0deg) scale(1); }
-            100% { opacity: 0; transform: translate(-50%, -30%) rotate(0deg) scale(1); }
-        }
-    </style>
+
+/* =========================================================
+   GAME BACKGROUND
+========================================================= */
+
+#game{
+    position:relative;
+    width:100vw;
+    height:100vh;
+
+    overflow:hidden;
+
+    background:
+        radial-gradient(
+            circle at 50% 30%,
+            #454d5b 0%,
+            #202631 45%,
+            #080a0e 100%
+        );
+
+    cursor:crosshair;
+
+    touch-action:none;
+}
+
+
+/* Background grid */
+
+#game::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:-50%;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent 0 49%,
+            rgba(255,255,255,.025) 50%,
+            transparent 51%
+        ),
+        linear-gradient(
+            0deg,
+            transparent 0 49%,
+            rgba(255,255,255,.025) 50%,
+            transparent 51%
+        );
+
+    background-size:70px 70px;
+
+    transform:perspective(400px)
+              rotateX(55deg);
+
+    opacity:.5;
+
+}
+
+
+/* =========================================================
+   HUD
+========================================================= */
+
+#hud{
+
+    position:absolute;
+
+    top:15px;
+    left:15px;
+    right:15px;
+
+    z-index:100;
+
+    display:flex;
+
+    justify-content:space-between;
+    align-items:center;
+
+    pointer-events:none;
+}
+
+.panel{
+
+    padding:10px 16px;
+
+    color:white;
+
+    background:rgba(0,0,0,.4);
+
+    border:1px solid rgba(255,255,255,.15);
+
+    border-radius:18px;
+
+    backdrop-filter:blur(10px);
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,.3);
+}
+
+#score{
+
+    font-size:24px;
+
+    font-weight:900;
+}
+
+#combo{
+
+    font-weight:bold;
+
+    color:#ffe066;
+}
+
+
+/* =========================================================
+   TARGET PERSON
+========================================================= */
+
+/*
+   ========================================================
+   ADD YOUR IMAGE HERE
+   ========================================================
+
+   Put your image in the SAME folder as this HTML.
+
+   Example:
+
+       person.png
+
+   Then use:
+
+       src="person.png"
+
+   You can also use JPG:
+
+       src="person.jpg"
+
+   ========================================================
+*/
+
+#person{
+
+    position:absolute;
+
+    width:150px;
+
+    height:150px;
+
+    object-fit:contain;
+
+    z-index:20;
+
+    user-select:none;
+
+    -webkit-user-drag:none;
+
+    filter:
+        drop-shadow(
+            0 15px 12px
+            rgba(0,0,0,.65)
+        );
+
+    will-change:
+        left,
+        top,
+        transform;
+
+    transition:
+        left .25s cubic-bezier(.2,1.4,.3,1),
+        top .25s cubic-bezier(.2,1.4,.3,1);
+
+}
+
+
+/* Dodge animation */
+
+.personDodge{
+
+    animation:
+        dodgeAnimation .32s
+        cubic-bezier(.2,1.5,.3,1);
+
+}
+
+@keyframes dodgeAnimation{
+
+    0%{
+        transform:
+            scale(1)
+            rotate(0deg);
+    }
+
+    35%{
+        transform:
+            scale(.75)
+            rotate(-15deg);
+    }
+
+    70%{
+        transform:
+            scale(1.15)
+            rotate(12deg);
+    }
+
+    100%{
+        transform:
+            scale(1)
+            rotate(0deg);
+    }
+
+}
+
+
+/* Hit reaction */
+
+.personHit{
+
+    animation:
+        hitAnimation .4s
+        ease-out;
+
+}
+
+@keyframes hitAnimation{
+
+    0%{
+        transform:
+            scale(1)
+            rotate(0);
+    }
+
+    25%{
+        transform:
+            scale(1.25,.75)
+            rotate(15deg);
+    }
+
+    50%{
+        transform:
+            scale(.75,1.2)
+            rotate(-15deg);
+    }
+
+    75%{
+        transform:
+            scale(1.15,.9)
+            rotate(8deg);
+    }
+
+    100%{
+        transform:
+            scale(1)
+            rotate(0);
+    }
+
+}
+
+
+/* =========================================================
+   SHOE
+========================================================= */
+
+.shoe{
+
+    position:absolute;
+
+    z-index:50;
+
+    font-size:75px;
+
+    pointer-events:none;
+
+    transform:
+        translate(-50%,-50%)
+        rotate(-50deg)
+        scale(.2);
+
+    opacity:0;
+
+}
+
+.shoeThrow{
+
+    animation:
+        shoeThrow
+        .45s
+        cubic-bezier(.2,.8,.2,1)
+        forwards;
+
+}
+
+@keyframes shoeThrow{
+
+    0%{
+
+        opacity:0;
+
+        transform:
+            translate(-50%,-160%)
+            rotate(-70deg)
+            scale(.2);
+
+    }
+
+    35%{
+
+        opacity:1;
+
+        transform:
+            translate(-50%,-50%)
+            rotate(-20deg)
+            scale(1.35);
+
+    }
+
+    65%{
+
+        opacity:1;
+
+        transform:
+            translate(-50%,-50%)
+            rotate(10deg)
+            scale(1);
+
+    }
+
+    100%{
+
+        opacity:0;
+
+        transform:
+            translate(-50%,-20%)
+            rotate(25deg)
+            scale(.8);
+
+    }
+
+}
+
+
+/* =========================================================
+   IMPACT
+========================================================= */
+
+.impact{
+
+    position:absolute;
+
+    z-index:60;
+
+    font-size:50px;
+
+    pointer-events:none;
+
+    animation:
+        impactAnimation
+        .5s
+        ease-out
+        forwards;
+
+}
+
+@keyframes impactAnimation{
+
+    0%{
+
+        opacity:0;
+
+        transform:
+            translate(-50%,-50%)
+            scale(.2);
+
+    }
+
+    25%{
+
+        opacity:1;
+
+        transform:
+            translate(-50%,-50%)
+            scale(1.4);
+
+    }
+
+    100%{
+
+        opacity:0;
+
+        transform:
+            translate(-50%,-80%)
+            scale(.8);
+
+    }
+
+}
+
+
+/* =========================================================
+   PARTICLES
+========================================================= */
+
+.particle{
+
+    position:absolute;
+
+    width:9px;
+
+    height:9px;
+
+    border-radius:50%;
+
+    background:white;
+
+    z-index:55;
+
+    pointer-events:none;
+
+    animation:
+        particleAnimation
+        .6s
+        ease-out
+        forwards;
+
+}
+
+@keyframes particleAnimation{
+
+    to{
+
+        opacity:0;
+
+        transform:
+            translate(
+                var(--x),
+                var(--y)
+            )
+            scale(.1);
+
+    }
+
+}
+
+
+/* =========================================================
+   SCORE POP
+========================================================= */
+
+.scorePop{
+
+    position:absolute;
+
+    z-index:80;
+
+    color:#fff;
+
+    font-size:30px;
+
+    font-weight:900;
+
+    pointer-events:none;
+
+    text-shadow:
+        0 3px 10px #000;
+
+    animation:
+        scoreAnimation
+        .7s
+        ease-out
+        forwards;
+
+}
+
+@keyframes scoreAnimation{
+
+    0%{
+
+        opacity:0;
+
+        transform:
+            translate(-50%,0)
+            scale(.5);
+
+    }
+
+    25%{
+
+        opacity:1;
+
+        transform:
+            translate(-50%,-20px)
+            scale(1.3);
+
+    }
+
+    100%{
+
+        opacity:0;
+
+        transform:
+            translate(-50%,-80px)
+            scale(1);
+
+    }
+
+}
+
+
+/* =========================================================
+   START SCREEN
+========================================================= */
+
+#startScreen{
+
+    position:absolute;
+
+    inset:0;
+
+    z-index:200;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    align-items:center;
+
+    color:white;
+
+    text-align:center;
+
+    background:
+        rgba(0,0,0,.35);
+
+    backdrop-filter:blur(4px);
+
+}
+
+#startScreen h1{
+
+    font-size:
+        clamp(35px,10vw,70px);
+
+    margin-bottom:10px;
+
+    text-shadow:
+        0 8px 30px #000;
+
+}
+
+#startScreen p{
+
+    opacity:.8;
+
+    margin-bottom:25px;
+
+}
+
+#startButton{
+
+    border:none;
+
+    padding:
+        15px 30px;
+
+    border-radius:999px;
+
+    font-size:18px;
+
+    font-weight:900;
+
+    background:white;
+
+    color:#111;
+
+    cursor:pointer;
+
+    box-shadow:
+        0 10px 30px #0008;
+
+    transition:
+        transform .2s;
+
+}
+
+#startButton:active{
+
+    transform:
+        scale(.9);
+
+}
+
+
+/* =========================================================
+   HINT
+========================================================= */
+
+#hint{
+
+    position:absolute;
+
+    bottom:15px;
+
+    left:50%;
+
+    transform:
+        translateX(-50%);
+
+    z-index:90;
+
+    color:#ffffff99;
+
+    font-size:12px;
+
+    white-space:nowrap;
+
+}
+
+
+/* =========================================================
+   SCREEN SHAKE
+========================================================= */
+
+.screenShake{
+
+    animation:
+        shake
+        .25s;
+
+}
+
+@keyframes shake{
+
+    0%{
+        transform:translate(0);
+    }
+
+    20%{
+        transform:translate(7px,-5px);
+    }
+
+    40%{
+        transform:translate(-6px,4px);
+    }
+
+    60%{
+        transform:translate(5px,3px);
+    }
+
+    80%{
+        transform:translate(-3px,-3px);
+    }
+
+    100%{
+        transform:translate(0);
+    }
+
+}
+
+
+/* =========================================================
+   HIDDEN
+========================================================= */
+
+.hidden{
+
+    display:none !important;
+
+}
+
+</style>
 </head>
+
+
 <body>
 
-    <div id="gameArea">
-        <div id="scoreBoard">Score: <span id="score">0</span></div>
-        
-        <!-- The person/target image -->
-        <img src="16.png" id="targetPerson" alt="Target" />
-        
-        <!-- The shoe emoji that will appear on tap -->
-        <div id="shoe" class="shoe">👞</div>
+
+<div id="game">
+
+
+    <!-- =====================================================
+         HUD
+    ====================================================== -->
+
+    <div id="hud">
+
+        <div class="panel">
+
+            <div id="score">
+                Score: 0
+            </div>
+
+            <div>
+                Best:
+                <span id="best">
+                    0
+                </span>
+            </div>
+
+        </div>
+
+
+        <div class="panel">
+
+            ⚡ Combo:
+            <span id="combo">
+                0
+            </span>
+
+        </div>
+
     </div>
 
-    <script>
-        const target = document.getElementById('targetPerson');
-        const shoe = document.getElementById('shoe');
-        const scoreElement = document.getElementById('score');
-        let score = 0;
 
-        // Function to move the person randomly (saving himself)
-        function dodge() {
-            // Get screen dimensions minus the image size so it stays on screen
-            const maxX = window.innerWidth - 120; 
-            const maxY = window.innerHeight - 150;
 
-            const randomX = Math.floor(Math.random() * maxX);
-            const randomY = Math.floor(Math.random() * maxY);
+    <!-- =====================================================
+         PERSON IMAGE
+         CHANGE ONLY THIS FILE NAME
+    ====================================================== -->
 
-            target.style.left = randomX + 'px';
-            target.style.top = randomY + 'px';
+    <img
+        id="person"
+        src="person.png"
+        alt="Person"
+    >
+
+
+
+    <!-- START SCREEN -->
+
+    <div id="startScreen">
+
+        <h1>
+            👞 SHOE ATTACK
+        </h1>
+
+        <p>
+            Hit the person before he escapes!
+        </p>
+
+        <button id="startButton">
+            START GAME
+        </button>
+
+    </div>
+
+
+    <div id="hint">
+        Tap the person 👞
+    </div>
+
+
+</div>
+
+
+
+<script>
+
+/* =========================================================
+   ELEMENTS
+========================================================= */
+
+const game =
+    document.getElementById("game");
+
+const person =
+    document.getElementById("person");
+
+const scoreText =
+    document.getElementById("score");
+
+const comboText =
+    document.getElementById("combo");
+
+const bestText =
+    document.getElementById("best");
+
+const startScreen =
+    document.getElementById("startScreen");
+
+const startButton =
+    document.getElementById("startButton");
+
+
+/* =========================================================
+   GAME VARIABLES
+========================================================= */
+
+let score = 0;
+
+let combo = 0;
+
+let playing = false;
+
+let dodgeTimer;
+
+let best =
+    Number(
+        localStorage.getItem(
+            "shoeGameBest"
+        ) || 0
+    );
+
+bestText.textContent = best;
+
+
+/* =========================================================
+   RANDOM POSITION
+========================================================= */
+
+function movePerson(animation = true){
+
+    const width =
+        person.offsetWidth || 150;
+
+    const height =
+        person.offsetHeight || 150;
+
+
+    const padding = 20;
+
+
+    const maxX =
+        window.innerWidth
+        - width
+        - padding;
+
+
+    const maxY =
+        window.innerHeight
+        - height
+        - 80;
+
+
+    const x =
+        Math.random()
+        * maxX
+        + padding;
+
+
+    const y =
+        Math.random()
+        * maxY
+        + 60;
+
+
+    person.style.left =
+        x + "px";
+
+    person.style.top =
+        y + "px";
+
+
+    if(animation){
+
+        person.classList.remove(
+            "personDodge"
+        );
+
+        void person.offsetWidth;
+
+        person.classList.add(
+            "personDodge"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   SHOE ANIMATION
+========================================================= */
+
+function throwShoe(x,y){
+
+    const shoe =
+        document.createElement("div");
+
+    shoe.className =
+        "shoe";
+
+    shoe.innerHTML =
+        "👞";
+
+    shoe.style.left =
+        x + "px";
+
+    shoe.style.top =
+        y + "px";
+
+
+    game.appendChild(shoe);
+
+
+    shoe.classList.add(
+        "shoeThrow"
+    );
+
+
+    setTimeout(
+        () => shoe.remove(),
+        500
+    );
+
+}
+
+
+/* =========================================================
+   EXPLOSION
+========================================================= */
+
+function explosion(x,y){
+
+    const impact =
+        document.createElement("div");
+
+    impact.className =
+        "impact";
+
+    impact.innerHTML =
+        "💥";
+
+    impact.style.left =
+        x + "px";
+
+    impact.style.top =
+        y + "px";
+
+
+    game.appendChild(impact);
+
+
+    setTimeout(
+        () => impact.remove(),
+        600
+    );
+
+
+    /* PARTICLES */
+
+    for(
+        let i = 0;
+        i < 15;
+        i++
+    ){
+
+        const particle =
+            document.createElement(
+                "div"
+            );
+
+        particle.className =
+            "particle";
+
+
+        particle.style.left =
+            x + "px";
+
+        particle.style.top =
+            y + "px";
+
+
+        particle.style.setProperty(
+            "--x",
+            (Math.random()*180-90)
+            + "px"
+        );
+
+
+        particle.style.setProperty(
+            "--y",
+            (Math.random()*180-90)
+            + "px"
+        );
+
+
+        game.appendChild(
+            particle
+        );
+
+
+        setTimeout(
+            () => particle.remove(),
+            650
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   SCORE POPUP
+========================================================= */
+
+function scorePopup(x,y){
+
+    const popup =
+        document.createElement(
+            "div"
+        );
+
+    popup.className =
+        "scorePop";
+
+    popup.innerHTML =
+        "+1 👞";
+
+
+    popup.style.left =
+        x + "px";
+
+    popup.style.top =
+        y + "px";
+
+
+    game.appendChild(
+        popup
+    );
+
+
+    setTimeout(
+        () => popup.remove(),
+        800
+    );
+
+}
+
+
+/* =========================================================
+   PERSON HIT
+========================================================= */
+
+function hitPerson(event){
+
+    if(!playing)
+        return;
+
+
+    event.stopPropagation();
+
+
+    const rect =
+        person.getBoundingClientRect();
+
+
+    const x =
+        rect.left
+        + rect.width / 2;
+
+
+    const y =
+        rect.top
+        + rect.height / 2;
+
+
+    /* SCORE */
+
+    score++;
+
+    combo++;
+
+
+    scoreText.textContent =
+        "Score: " + score;
+
+
+    comboText.textContent =
+        combo;
+
+
+    /* ANIMATIONS */
+
+    throwShoe(x,y);
+
+    explosion(x,y);
+
+    scorePopup(x,y);
+
+
+    person.classList.remove(
+        "personHit"
+    );
+
+    void person.offsetWidth;
+
+    person.classList.add(
+        "personHit"
+    );
+
+
+    /* SCREEN SHAKE */
+
+    game.classList.remove(
+        "screenShake"
+    );
+
+    void game.offsetWidth;
+
+    game.classList.add(
+        "screenShake"
+    );
+
+
+    /* SAVE BEST */
+
+    if(score > best){
+
+        best = score;
+
+        bestText.textContent =
+            best;
+
+        localStorage.setItem(
+            "shoeGameBest",
+            best
+        );
+
+    }
+
+
+    /*
+       Move person after hit.
+
+       Higher score = faster movement.
+    */
+
+    clearTimeout(
+        dodgeTimer
+    );
+
+
+    dodgeTimer =
+        setTimeout(
+            () => {
+
+                movePerson(true);
+
+            },
+
+            Math.max(
+                150,
+                650 - score * 15
+            )
+
+        );
+
+}
+
+
+/* =========================================================
+   MISSED TAP
+========================================================= */
+
+game.addEventListener(
+    "pointerdown",
+    function(event){
+
+        if(!playing)
+            return;
+
+
+        if(
+            event.target !== person
+        ){
+
+            combo = 0;
+
+            comboText.textContent =
+                combo;
+
+
+            /*
+               Throw shoe wherever
+               player tapped.
+            */
+
+            throwShoe(
+                event.clientX,
+                event.clientY
+            );
+
+
+            /*
+               Person gets scared
+               and dodges.
+            */
+
+            movePerson(true);
+
         }
 
-        // Make the person dodge every 1.2 seconds automatically
-        let dodgeInterval = setInterval(() => {
-            if (!target.classList.contains('flinch')) {
-                dodge();
-            }
-        }, 1200);
+    }
+);
 
-        // Initial placement
-        dodge();
 
-        // Listen for screen taps
-        document.getElementById('gameArea').addEventListener('pointerdown', function(e) {
-            // Position the shoe exactly where the user tapped
-            shoe.style.left = e.clientX + 'px';
-            shoe.style.top = e.clientY + 'px';
+/* =========================================================
+   AUTOMATIC DODGING
+========================================================= */
 
-            // Restart the shoe smash animation
-            shoe.classList.remove('smash');
-            void shoe.offsetWidth; // Trigger reflow to restart animation
-            shoe.classList.add('smash');
-        });
+function startDodgeLoop(){
 
-        // Listen for taps directly on the person image
-        target.addEventListener('pointerdown', function(e) {
-            // Stop the event from triggering the gameArea listener twice
-            e.stopPropagation(); 
+    clearInterval(
+        dodgeTimer
+    );
 
-            // Position shoe and animate
-            shoe.style.left = e.clientX + 'px';
-            shoe.style.top = e.clientY + 'px';
-            shoe.classList.remove('smash');
-            void shoe.offsetWidth;
-            shoe.classList.add('smash');
 
-            // Add hit score
-            score++;
-            scoreElement.innerText = score;
+    dodgeTimer =
+        setInterval(
+            function(){
 
-            // Apply flinch animation
-            target.classList.add('flinch');
+                if(!playing)
+                    return;
 
-            // After a short delay, remove flinch and make him dodge away quickly
-            setTimeout(() => {
-                target.classList.remove('flinch');
-                dodge(); // Instantly move to a new spot to "save himself"
-            }, 300);
-        });
-    </script>
+
+                movePerson(true);
+
+            },
+
+            1200
+        );
+
+}
+
+
+/* =========================================================
+   START GAME
+========================================================= */
+
+function startGame(){
+
+    score = 0;
+
+    combo = 0;
+
+    playing = true;
+
+
+    scoreText.textContent =
+        "Score: 0";
+
+    comboText.textContent =
+        "0";
+
+
+    startScreen.classList.add(
+        "hidden"
+    );
+
+
+    movePerson(false);
+
+
+    startDodgeLoop();
+
+}
+
+
+/* =========================================================
+   BUTTON
+========================================================= */
+
+startButton.addEventListener(
+    "click",
+    function(event){
+
+        event.stopPropagation();
+
+        startGame();
+
+    }
+);
+
+
+/* =========================================================
+   PERSON CLICK
+========================================================= */
+
+person.addEventListener(
+    "pointerdown",
+    hitPerson
+);
+
+
+/* =========================================================
+   INITIAL POSITION
+========================================================= */
+
+movePerson(false);
+
+
+/* =========================================================
+   RESPONSIVE RESIZE
+========================================================= */
+
+window.addEventListener(
+    "resize",
+    function(){
+
+        if(playing)
+            movePerson(false);
+
+    }
+);
+
+</script>
+
 </body>
 </html>
-
-
